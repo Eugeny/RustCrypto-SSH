@@ -11,3 +11,5 @@ Additionally contains:
 
 * https://github.com/RustCrypto/SSH/pull/321
 * https://github.com/RustCrypto/SSH/pull/315
+* https://github.com/RustCrypto/SSH/pull/311
+* https://github.com/RustCrypto/SSH/pull/323
