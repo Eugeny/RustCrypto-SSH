@@ -10,3 +10,4 @@ Currently at:
 Additionally contains:
 
 * https://github.com/RustCrypto/SSH/pull/321
+* https://github.com/RustCrypto/SSH/pull/315

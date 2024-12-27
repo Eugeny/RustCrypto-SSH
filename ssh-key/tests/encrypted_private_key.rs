@@ -3,7 +3,7 @@
 #![cfg(feature = "alloc")]
 
 use hex_literal::hex;
-use ssh_key::{Algorithm, Cipher, Kdf, KdfAlg, PrivateKey};
+use internal_russh_forked_ssh_key::{Algorithm, Cipher, Kdf, KdfAlg, PrivateKey};
 
 /// Unencrypted Ed25519 OpenSSH-formatted private key.
 #[cfg(feature = "encryption")]

@@ -2,14 +2,14 @@
 
 use hex_literal::hex;
 #[cfg(feature = "alloc")]
-use ssh_key::public::{Ed25519PublicKey, SkEd25519};
-use ssh_key::{Algorithm, PublicKey};
+use internal_russh_forked_ssh_key::public::{Ed25519PublicKey, SkEd25519};
+use internal_russh_forked_ssh_key::{Algorithm, PublicKey};
 use std::collections::HashSet;
 #[cfg(all(feature = "ecdsa", feature = "alloc"))]
-use {sec1::consts::U32, ssh_key::public::SkEcdsaSha2NistP256};
+use {sec1::consts::U32, internal_russh_forked_ssh_key::public::SkEcdsaSha2NistP256};
 
 #[cfg(feature = "ecdsa")]
-use ssh_key::EcdsaCurve;
+use internal_russh_forked_ssh_key::EcdsaCurve;
 
 #[cfg(feature = "std")]
 use std::{fs, path::PathBuf};

@@ -3,7 +3,7 @@
 #![cfg(feature = "alloc")]
 
 use hex_literal::hex;
-use ssh_key::{Algorithm, HashAlg, LineEnding, PublicKey, SshSig};
+use internal_russh_forked_ssh_key::{Algorithm, HashAlg, LineEnding, PublicKey, SshSig};
 
 #[cfg(any(
     feature = "dsa",
@@ -11,10 +11,10 @@ use ssh_key::{Algorithm, HashAlg, LineEnding, PublicKey, SshSig};
     feature = "p256",
     feature = "rsa"
 ))]
-use {encoding::Decode, signature::Verifier, ssh_key::PrivateKey, ssh_key::Signature};
+use {encoding::Decode, signature::Verifier, internal_russh_forked_ssh_key::PrivateKey, internal_russh_forked_ssh_key::Signature};
 
 #[cfg(feature = "ed25519")]
-use ssh_key::Error;
+use internal_russh_forked_ssh_key::Error;
 
 /// DSA OpenSSH-formatted private key.
 #[cfg(feature = "dsa")]

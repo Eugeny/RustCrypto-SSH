@@ -2,7 +2,7 @@
 
 #![cfg(all(feature = "ecdsa", feature = "std"))]
 
-use ssh_key::AuthorizedKeys;
+use internal_russh_forked_ssh_key::AuthorizedKeys;
 
 // TODO(tarcieri): test file permissions
 #[test]

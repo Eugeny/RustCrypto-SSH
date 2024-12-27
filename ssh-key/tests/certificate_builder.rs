@@ -8,10 +8,10 @@
 
 use hex_literal::hex;
 use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
-use ssh_key::{certificate, Algorithm, PrivateKey};
+use internal_russh_forked_ssh_key::{certificate, Algorithm, PrivateKey};
 
 #[cfg(feature = "p256")]
-use ssh_key::EcdsaCurve;
+use internal_russh_forked_ssh_key::EcdsaCurve;
 
 #[cfg(all(feature = "ed25519", feature = "rsa"))]
 use std::str::FromStr;

@@ -2,7 +2,7 @@
 
 #![cfg(feature = "alloc")]
 
-use ssh_key::AlgorithmName;
+use internal_russh_forked_ssh_key::AlgorithmName;
 use std::str::FromStr;
 
 #[test]
