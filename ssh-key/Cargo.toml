@@ -1,5 +1,5 @@
 [package]
-name = "ssh-key"
+name = "internal-russh-forked-ssh-key"
 version = "0.6.3"
 description = """
 Pure Rust implementation of SSH key file format decoders/encoders as described

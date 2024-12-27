@@ -2,7 +2,7 @@
 
 #![cfg(all(feature = "ecdsa", feature = "std"))]
 
-use ssh_key::known_hosts::{HostPatterns, KnownHosts, Marker};
+use internal_russh_forked_ssh_key::known_hosts::{HostPatterns, KnownHosts, Marker};
 
 // TODO(tarcieri): test file permissions
 #[test]

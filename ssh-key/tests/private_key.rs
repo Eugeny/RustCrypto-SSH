@@ -1,17 +1,17 @@
 //! SSH private key tests.
 
 use hex_literal::hex;
-use ssh_key::{Algorithm, Cipher, KdfAlg, PrivateKey};
+use internal_russh_forked_ssh_key::{Algorithm, Cipher, KdfAlg, PrivateKey};
 
 #[cfg(feature = "ecdsa")]
-use ssh_key::EcdsaCurve;
+use internal_russh_forked_ssh_key::EcdsaCurve;
 
 #[cfg(all(feature = "alloc"))]
-use ssh_key::LineEnding;
+use internal_russh_forked_ssh_key::LineEnding;
 
 #[cfg(all(feature = "std"))]
 use {
-    ssh_key::PublicKey,
+    internal_russh_forked_ssh_key::PublicKey,
     std::{io, process},
 };
 

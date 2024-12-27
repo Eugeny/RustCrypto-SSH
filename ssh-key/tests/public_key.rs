@@ -1,11 +1,11 @@
 //! SSH public key tests.
 
 use hex_literal::hex;
-use ssh_key::{Algorithm, PublicKey};
+use internal_russh_forked_ssh_key::{Algorithm, PublicKey};
 use std::collections::HashSet;
 
 #[cfg(feature = "ecdsa")]
-use ssh_key::EcdsaCurve;
+use internal_russh_forked_ssh_key::EcdsaCurve;
 
 /// DSA OpenSSH-formatted public key
 #[cfg(feature = "alloc")]

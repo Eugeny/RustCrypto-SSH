@@ -3,14 +3,14 @@
 #![cfg(feature = "alloc")]
 
 use hex_literal::hex;
-use ssh_key::{Algorithm, Certificate};
+use internal_russh_forked_ssh_key::{Algorithm, Certificate};
 use std::str::FromStr;
 
 #[cfg(feature = "ecdsa")]
-use ssh_key::EcdsaCurve;
+use internal_russh_forked_ssh_key::EcdsaCurve;
 
 #[cfg(feature = "rsa")]
-use ssh_key::HashAlg;
+use internal_russh_forked_ssh_key::HashAlg;
 
 /// DSA OpenSSH Certificate
 const DSA_CERT_EXAMPLE: &str = include_str!("examples/id_dsa_1024-cert.pub");
