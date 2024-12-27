@@ -1,3 +1,12 @@
+# DO NOT USE
+
+This is a private fork with a few fixes on top.
+
+Currently at:
+
+* `ssh-key@0.6.3`
+* `ssh-encoding@0.2.0`
+
 # [RustCrypto]: SSH [![Project Chat][chat-image]][chat-link] [![dependency status][deps-image]][deps-link]
 
 Pure Rust implementation of components of the Secure Shell ([SSH]) protocol.
