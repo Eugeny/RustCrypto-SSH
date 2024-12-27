@@ -358,6 +358,7 @@ impl PrivateKey {
             &mut &**buffer,
             self.public_key.key_data.clone(),
             self.cipher.block_size(),
+            self.cipher.block_size() - 1,
         )
     }
 
@@ -548,8 +549,10 @@ impl PrivateKey {
         reader: &mut impl Reader,
         public_key: public::KeyData,
         block_size: usize,
+        max_padding_size: usize,
     ) -> Result<Self> {
         debug_assert!(block_size <= MAX_BLOCK_SIZE);
+        debug_assert!(max_padding_size <= MAX_BLOCK_SIZE);
 
         // Ensure input data is padding-aligned
         if reader.remaining_len().checked_rem(block_size) != Some(0) {
@@ -575,7 +578,7 @@ impl PrivateKey {
 
         let padding_len = reader.remaining_len();
 
-        if padding_len >= block_size {
+        if padding_len > max_padding_size {
             return Err(encoding::Error::Length.into());
         }
 
@@ -733,7 +736,24 @@ impl Decode for PrivateKey {
         }
 
         reader.read_prefixed(|reader| {
-            Self::decode_privatekey_comment_pair(reader, public_key, cipher.block_size())
+            // PuTTYgen uses a non-standard block size of 16
+            // and _always_ adds a padding even if data length
+            // is divisible by 16 - for unencrypted keys
+            // in the OpenSSH format.
+            // We're only relaxing the exact length check, but will
+            // still validate that the contents of the padding area.
+            // In all other cases there can be up to (but not including)
+            // `block_size` padding bytes as per `PROTOCOL.key`.
+            let max_padding_size = match cipher {
+                Cipher::None => 16,
+                _ => cipher.block_size() - 1,
+            };
+            Self::decode_privatekey_comment_pair(
+                reader,
+                public_key,
+                cipher.block_size(),
+                max_padding_size,
+            )
         })
     }
 }
