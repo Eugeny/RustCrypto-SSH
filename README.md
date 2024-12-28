@@ -4,7 +4,7 @@ This is a private fork with a few fixes on top.
 
 Currently at:
 
-* `ssh-key@0.6.3`
+* `ssh-key@0.6.7`
 * `ssh-encoding@0.2.0`
 
 Additionally contains:

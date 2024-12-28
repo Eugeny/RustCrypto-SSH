@@ -402,7 +402,7 @@ dependencies = [
 
 [[package]]
 name = "internal-russh-forked-ssh-key"
-version = "0.6.7-internal.2"
+version = "0.6.7-internal.3"
 dependencies = [
  "bcrypt-pbkdf",
  "dsa",
