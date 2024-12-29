@@ -415,6 +415,7 @@ dependencies = [
  "ed25519-dalek",
  "hex",
  "hex-literal",
+ "hmac",
  "num-bigint-dig",
  "p256",
  "p384",
