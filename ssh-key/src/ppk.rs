@@ -400,6 +400,7 @@ fn decode_private_key_as(
             }))
         }
 
+        #[cfg(feature = "rsa")]
         (Algorithm::Rsa { .. }, KeyData::Rsa(pk)) => {
             use crate::private::{RsaKeypair, RsaPrivateKey};
 
