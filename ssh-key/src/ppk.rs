@@ -12,7 +12,7 @@ use hex::FromHex;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::private::{EcdsaKeypair, KeypairData};
+use crate::private::KeypairData;
 use crate::public::KeyData;
 use crate::{Algorithm, Error, Mpint, PublicKey};
 use encoding::base64::{self, Base64, Encoding};
@@ -400,7 +400,6 @@ fn decode_private_key_as(
             }))
         }
 
-        #[cfg(feature = "rsa")]
         (Algorithm::Rsa { .. }, KeyData::Rsa(pk)) => {
             use crate::private::{RsaKeypair, RsaPrivateKey};
 
@@ -443,6 +442,7 @@ fn decode_private_key_as(
         #[cfg(any(feature = "p256", feature = "p384", feature = "p521"))]
         (Algorithm::Ecdsa { curve }, KeyData::Ecdsa(public)) => {
             // PPK encodes EcDSA private exponent as an mpint
+            use crate::private::EcdsaKeypair;
             use crate::public::EcdsaPublicKey;
             use crate::EcdsaCurve;
 
