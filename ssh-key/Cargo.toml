@@ -29,6 +29,7 @@ bcrypt-pbkdf = { version = "0.10", optional = true, default-features = false, fe
 bigint = { package = "num-bigint-dig", version = "0.8", optional = true, default-features = false }
 dsa = { version = "0.6", optional = true, default-features = false }
 ed25519-dalek = { version = "2", optional = true, default-features = false }
+hex = { version = "0.4", optional = true }
 p256 = { version = "0.13", optional = true, default-features = false, features = ["ecdsa"] }
 p384 = { version = "0.13", optional = true, default-features = false, features = ["ecdsa"] }
 p521 = { version = "0.13.3", optional = true, default-features = false, features = ["ecdsa", "getrandom"] } # TODO(tarcieri): RFC6979
@@ -77,6 +78,7 @@ getrandom = ["rand_core/getrandom"]
 p256 = ["dep:p256", "ecdsa"]
 p384 = ["dep:p384", "ecdsa"]
 p521 = ["dep:p521", "ecdsa"]
+ppk = ["dep:hex", "alloc", "std"]
 rsa = ["dep:bigint", "dep:rsa", "alloc", "rand_core"]
 rsa-sha1 = ["rsa", "dep:sha1", "sha1/oid"]
 tdes = ["cipher/tdes", "encryption"]
