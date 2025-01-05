@@ -434,6 +434,7 @@ dependencies = [
  "argon2",
  "bcrypt-pbkdf",
  "dsa",
+ "ecdsa",
  "ed25519-dalek",
  "hex",
  "hex-literal",

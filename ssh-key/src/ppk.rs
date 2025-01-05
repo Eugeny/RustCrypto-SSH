@@ -19,7 +19,6 @@ use encoding::base64::{self, Base64, Encoding};
 use encoding::{Decode, Encode, LabelError, Reader};
 use subtle::ConstantTimeEq;
 
-#[derive(Debug)]
 pub enum Kdf {
     Argon2 { kdf: Argon2<'static>, salt: Vec<u8> },
 }
@@ -106,7 +105,6 @@ impl Cipher {
     }
 }
 
-#[derive(Debug)]
 pub struct PpkEncryption {
     pub cipher: Cipher,
     pub kdf: Kdf,
