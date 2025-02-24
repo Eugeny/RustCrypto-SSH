@@ -1,6 +1,6 @@
 [package]
 name = "internal-russh-forked-ssh-key"
-version = "0.6.9+upstream-0.6.7"
+version = "0.6.10+upstream-0.6.7"
 description = """
 Pure Rust implementation of SSH key file format decoders/encoders as described
 in RFC4251/RFC4253 and OpenSSH key formats, as well as "sshsig" signatures and
@@ -9,7 +9,7 @@ with further support for the `authorized_keys` and `known_hosts` file formats.
 """
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/RustCrypto/SSH/tree/master/ssh-key"
+repository = "https://github.com/Eugeny/RustCrypto-SSH/"
 categories = ["authentication", "cryptography", "encoding", "no-std", "parser-implementations"]
 keywords = ["crypto", "certificate", "openssh", "ssh", "sshsig"]
 readme = "README.md"
