@@ -25,7 +25,7 @@ pub struct RsaPublicKey {
 
 impl RsaPublicKey {
     /// Minimum allowed RSA key size.
-    #[cfg(feature = "rsa")]
+    #[cfg(all(feature = "rsa", not(feature = "hazmat-allow-insecure-rsa-keys")))]
     pub(crate) const MIN_KEY_SIZE: usize = RsaKeypair::MIN_KEY_SIZE;
 }
 
@@ -78,11 +78,12 @@ impl TryFrom<&RsaPublicKey> for rsa::RsaPublicKey {
         )
         .map_err(|_| Error::Crypto)?;
 
-        if ret.size().saturating_mul(8) >= RsaPublicKey::MIN_KEY_SIZE {
-            Ok(ret)
-        } else {
-            Err(Error::Crypto)
+        #[cfg(not(feature = "hazmat-allow-insecure-rsa-keys"))]
+        if ret.size().saturating_mul(8) < RsaPublicKey::MIN_KEY_SIZE {
+            return Err(Error::Crypto);
         }
+
+        Ok(ret)
     }
 }
 
