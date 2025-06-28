@@ -16,8 +16,9 @@ Additionally contains:
 * https://github.com/RustCrypto/SSH/pull/318
 * https://github.com/RustCrypto/SSH/pull/324
 * https://github.com/RustCrypto/SSH/pull/337
+* https://github.com/RustCrypto/SSH/pull/351
+* https://github.com/RustCrypto/SSH/pull/327
 
 and fixes for:
 
 * a04032b: https://github.com/RustCrypto/elliptic-curves/issues/1038
-* a04032b: https://github.com/RustCrypto/SSH/issues/326
