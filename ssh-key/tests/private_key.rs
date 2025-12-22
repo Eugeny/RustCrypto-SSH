@@ -654,7 +654,7 @@ phY3prb3dzQGwtemFjemtvd3M=
     assert_eq!(
         key.algorithm(),
         Algorithm::Ecdsa {
-            curve: ssh_key::EcdsaCurve::NistP521
+            curve: crate::EcdsaCurve::NistP521
         }
     );
 }

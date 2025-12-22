@@ -4,6 +4,8 @@ use crate::{Error, Result};
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
+#[cfg(feature = "rsa")]
+use rsa::BoxedUint;
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
@@ -232,6 +234,45 @@ impl TryFrom<&Mpint> for bigint::BigUint {
             .as_positive_bytes()
             .map(bigint::BigUint::from_bytes_be)
             .ok_or(Error::Crypto)
+    }
+}
+
+#[cfg(any(feature = "dsa", feature = "rsa"))]
+impl TryFrom<Mpint> for BoxedUint {
+    type Error = Error;
+
+    fn try_from(mpint: Mpint) -> Result<BoxedUint> {
+        BoxedUint::try_from(&mpint)
+    }
+}
+
+#[cfg(any(feature = "dsa", feature = "rsa"))]
+impl TryFrom<&Mpint> for BoxedUint {
+    type Error = Error;
+
+    fn try_from(mpint: &Mpint) -> Result<BoxedUint> {
+        // TODO(tarcieri): enforce a maximum size?
+        let bytes = mpint.as_positive_bytes().ok_or(Error::MpintEncoding)?;
+        Ok(BoxedUint::from_be_slice_vartime(bytes))
+    }
+}
+
+#[cfg(any(feature = "dsa", feature = "rsa"))]
+impl TryFrom<BoxedUint> for Mpint {
+    type Error = Error;
+
+    fn try_from(uint: BoxedUint) -> Result<Mpint> {
+        Mpint::try_from(&uint)
+    }
+}
+
+#[cfg(any(feature = "dsa", feature = "rsa"))]
+impl TryFrom<&BoxedUint> for Mpint {
+    type Error = Error;
+
+    fn try_from(uint: &BoxedUint) -> Result<Mpint> {
+        let bytes = Zeroizing::new(uint.to_be_bytes());
+        Mpint::from_positive_bytes(&bytes)
     }
 }
 

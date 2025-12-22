@@ -87,6 +87,8 @@ pub enum Error {
         /// Version number.
         number: u32,
     },
+
+    MpintEncoding,
 }
 
 impl fmt::Display for Error {
@@ -120,6 +122,7 @@ impl fmt::Display for Error {
                 "unexpected trailing data at end of message ({remaining} bytes)",
             ),
             Error::Version { number: version } => write!(f, "version unsupported: {version}"),
+            Error::MpintEncoding => write!(f, "mpint encoding error"),
         }
     }
 }

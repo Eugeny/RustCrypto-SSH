@@ -664,27 +664,33 @@ impl Verifier<Signature> for EcdsaPublicKey {
     }
 }
 
+/// Maps between versions of signature crate
+fn remap_sig_result<T>(r: signature_next::Result<T>) -> signature::Result<T> {
+    r.map_err(|_| signature::Error::new())
+}
+
 #[cfg(feature = "rsa")]
 impl Signer<Signature> for (&RsaKeypair, Option<HashAlg>) {
     fn try_sign(&self, message: &[u8]) -> signature::Result<Signature> {
+        use rsa::signature::{SignatureEncoding, Signer};
         let data = match self.1 {
-            Some(HashAlg::Sha512) => {
-                rsa::pkcs1v15::SigningKey::<Sha512>::try_from(self.0)?.try_sign(message)
-            }
-            Some(HashAlg::Sha256) => {
-                rsa::pkcs1v15::SigningKey::<Sha256>::try_from(self.0)?.try_sign(message)
-            }
+            Some(HashAlg::Sha512) => remap_sig_result(
+                rsa::pkcs1v15::SigningKey::<rsa::sha2::Sha512>::try_from(self.0)?.try_sign(message),
+            ),
+            Some(HashAlg::Sha256) => remap_sig_result(
+                rsa::pkcs1v15::SigningKey::<rsa::sha2::Sha256>::try_from(self.0)?.try_sign(message),
+            ),
             #[cfg(feature = "rsa-sha1")]
-            None => rsa::pkcs1v15::SigningKey::<Sha1>::try_from(self.0)?.try_sign(message),
+            None => remap_sig_result(
+                rsa::pkcs1v15::SigningKey::<sha1_next::Sha1>::try_from(self.0)?.try_sign(message),
+            ),
             #[cfg(not(feature = "rsa-sha1"))]
             None => return Err(Algorithm::Rsa { hash: None }.unsupported_error().into()),
         }
         .map_err(|_| signature::Error::new())?;
 
         Ok(Signature {
-            algorithm: Algorithm::Rsa {
-                hash: self.1,
-            },
+            algorithm: Algorithm::Rsa { hash: self.1 },
             data: data.to_vec(),
         })
     }
@@ -700,23 +706,31 @@ impl Signer<Signature> for RsaKeypair {
 #[cfg(feature = "rsa")]
 impl Verifier<Signature> for RsaPublicKey {
     fn verify(&self, message: &[u8], signature: &Signature) -> signature::Result<()> {
+        use signature_next::Verifier;
         match signature.algorithm {
             Algorithm::Rsa { hash } => {
-                let signature = rsa::pkcs1v15::Signature::try_from(signature.data.as_ref())?;
+                let signature =
+                    remap_sig_result(rsa::pkcs1v15::Signature::try_from(signature.data.as_ref()))?;
 
                 match hash {
                     #[cfg(not(feature = "rsa-sha1"))]
                     None => Err(Algorithm::Rsa { hash: None }.unsupported_error().into()),
                     #[cfg(feature = "rsa-sha1")]
-                    None => rsa::pkcs1v15::VerifyingKey::<Sha1>::try_from(self)?
-                        .verify(message, &signature)
-                        .map_err(|_| signature::Error::new()),
-                    Some(HashAlg::Sha256) => rsa::pkcs1v15::VerifyingKey::<Sha256>::try_from(self)?
-                        .verify(message, &signature)
-                        .map_err(|_| signature::Error::new()),
-                    Some(HashAlg::Sha512) => rsa::pkcs1v15::VerifyingKey::<Sha512>::try_from(self)?
-                        .verify(message, &signature)
-                        .map_err(|_| signature::Error::new()),
+                    None => remap_sig_result(
+                        rsa::pkcs1v15::VerifyingKey::<sha1_next::Sha1>::try_from(self)?
+                            .verify(message, &signature),
+                    )
+                    .map_err(|_| signature::Error::new()),
+                    Some(HashAlg::Sha256) => remap_sig_result(
+                        rsa::pkcs1v15::VerifyingKey::<rsa::sha2::Sha256>::try_from(self)?
+                            .verify(message, &signature),
+                    )
+                    .map_err(|_| signature::Error::new()),
+                    Some(HashAlg::Sha512) => remap_sig_result(
+                        rsa::pkcs1v15::VerifyingKey::<rsa::sha2::Sha512>::try_from(self)?
+                            .verify(message, &signature),
+                    )
+                    .map_err(|_| signature::Error::new()),
                 }
             }
             _ => Err(signature.algorithm().unsupported_error().into()),

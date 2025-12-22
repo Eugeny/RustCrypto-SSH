@@ -9,11 +9,8 @@ use zeroize::Zeroize;
 #[cfg(feature = "rsa")]
 use {
     rand_core::CryptoRngCore,
-    rsa::{
-        pkcs1v15,
-        traits::{PrivateKeyParts, PublicKeyParts},
-    },
-    sha2::{digest::const_oid::AssociatedOid, Digest},
+    rsa::sha2::digest::const_oid::AssociatedOid,
+    rsa::{pkcs1v15, traits::PrivateKeyParts},
 };
 
 /// RSA private key.
@@ -90,6 +87,26 @@ impl Drop for RsaPrivateKey {
     }
 }
 
+// Adapter between RngCore trait versions between rand_core and rsa::rand_core
+#[cfg(feature = "rsa")]
+struct RngAdapter<R: CryptoRngCore>(R);
+#[cfg(feature = "rsa")]
+impl<R: CryptoRngCore> rsa::rand_core::RngCore for RngAdapter<R> {
+    fn next_u32(&mut self) -> u32 {
+        self.0.next_u32()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.0.next_u64()
+    }
+
+    fn fill_bytes(&mut self, dst: &mut [u8]) {
+        self.0.fill_bytes(dst)
+    }
+}
+#[cfg(feature = "rsa")]
+impl<R: CryptoRngCore> rsa::rand_core::CryptoRng for RngAdapter<R> {}
+
 /// RSA private/public keypair.
 #[derive(Clone)]
 pub struct RsaKeypair {
@@ -112,7 +129,8 @@ impl RsaKeypair {
         if bit_size < Self::MIN_KEY_SIZE {
             return Err(Error::Crypto);
         }
-        rsa::RsaPrivateKey::new(rng, bit_size)?.try_into()
+        let mut rng = RngAdapter(rng);
+        rsa::RsaPrivateKey::new(&mut rng, bit_size)?.try_into()
     }
 }
 
@@ -193,13 +211,15 @@ impl TryFrom<&RsaKeypair> for rsa::RsaPrivateKey {
     type Error = Error;
 
     fn try_from(key: &RsaKeypair) -> Result<rsa::RsaPrivateKey> {
-        let ret = rsa::RsaPrivateKey::from_components(
-            rsa::BigUint::try_from(&key.public.n)?,
-            rsa::BigUint::try_from(&key.public.e)?,
-            rsa::BigUint::try_from(&key.private.d)?,
+        use rsa::BoxedUint;
+
+        let ret: rsa::RsaPrivateKey = rsa::RsaPrivateKey::from_components(
+            BoxedUint::try_from(&key.public.n)?,
+            BoxedUint::try_from(&key.public.e)?,
+            BoxedUint::try_from(&key.private.d)?,
             vec![
-                rsa::BigUint::try_from(&key.private.p)?,
-                rsa::BigUint::try_from(&key.private.q)?,
+                BoxedUint::try_from(&key.private.p)?,
+                BoxedUint::try_from(&key.private.q)?,
             ],
         )?;
 
@@ -251,7 +271,7 @@ impl TryFrom<&rsa::RsaPrivateKey> for RsaKeypair {
 #[cfg(feature = "rsa")]
 impl<D> TryFrom<&RsaKeypair> for pkcs1v15::SigningKey<D>
 where
-    D: Digest + AssociatedOid,
+    D: digest_next::Digest + AssociatedOid,
 {
     type Error = Error;
 

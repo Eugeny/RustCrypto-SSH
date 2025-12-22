@@ -7,8 +7,8 @@ use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 #[cfg(feature = "rsa")]
 use {
     crate::private::RsaKeypair,
+    rsa::sha2::{digest::const_oid::AssociatedOid, Digest},
     rsa::{pkcs1v15, traits::PublicKeyParts},
-    sha2::{digest::const_oid::AssociatedOid, Digest},
 };
 
 /// RSA public key.
@@ -72,11 +72,11 @@ impl TryFrom<&RsaPublicKey> for rsa::RsaPublicKey {
     type Error = Error;
 
     fn try_from(key: &RsaPublicKey) -> Result<rsa::RsaPublicKey> {
-        let ret = rsa::RsaPublicKey::new(
-            rsa::BigUint::try_from(&key.n)?,
-            rsa::BigUint::try_from(&key.e)?,
-        )
-        .map_err(|_| Error::Crypto)?;
+        use rsa::BoxedUint;
+
+        let ret =
+            rsa::RsaPublicKey::new(BoxedUint::try_from(&key.n)?, BoxedUint::try_from(&key.e)?)
+                .map_err(|_| Error::Crypto)?;
 
         #[cfg(not(feature = "hazmat-allow-insecure-rsa-keys"))]
         if ret.size().saturating_mul(8) < RsaPublicKey::MIN_KEY_SIZE {
@@ -103,19 +103,19 @@ impl TryFrom<&rsa::RsaPublicKey> for RsaPublicKey {
     fn try_from(key: &rsa::RsaPublicKey) -> Result<RsaPublicKey> {
         Ok(RsaPublicKey {
             e: key.e().try_into()?,
-            n: key.n().try_into()?,
+            n: key.n().clone().get().try_into()?,
         })
     }
 }
 
 #[cfg(feature = "rsa")]
-impl<D> TryFrom<&RsaPublicKey> for pkcs1v15::VerifyingKey<D>
+impl<D> TryFrom<&RsaPublicKey> for rsa::pkcs1v15::VerifyingKey<D>
 where
     D: Digest + AssociatedOid,
 {
     type Error = Error;
 
-    fn try_from(key: &RsaPublicKey) -> Result<pkcs1v15::VerifyingKey<D>> {
-        Ok(pkcs1v15::VerifyingKey::new(key.try_into()?))
+    fn try_from(key: &RsaPublicKey) -> Result<rsa::pkcs1v15::VerifyingKey<D>> {
+        Ok(rsa::pkcs1v15::VerifyingKey::new(key.try_into()?))
     }
 }
