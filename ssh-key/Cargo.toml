@@ -1,6 +1,6 @@
 [package]
 name = "internal-russh-forked-ssh-key"
-version = "0.6.13+upstream-0.6.7"
+version = "0.6.14+upstream-0.6.7"
 description = """
 Pure Rust implementation of SSH key file format decoders/encoders as described
 in RFC4251/RFC4253 and OpenSSH key formats, as well as "sshsig" signatures and
@@ -68,7 +68,7 @@ std = [
 ]
 
 crypto = ["ed25519", "p256", "p384", "p521", "rsa"] # NOTE: `dsa` is obsolete/weak
-dsa = ["dep:bigint", "dep:dsa", "dep:sha1", "alloc", "signature/rand_core"]
+dsa = ["dep:bigint", "dep:dsa", "dep:sha1", "dep:sha1_next", "alloc", "signature/rand_core"]
 ecdsa = ["dep:sec1", "dep:ecdsa"]
 ed25519 = ["dep:ed25519-dalek", "rand_core"]
 encryption = [
@@ -85,9 +85,9 @@ hazmat-allow-insecure-rsa-keys = []
 p256 = ["dep:p256", "ecdsa"]
 p384 = ["dep:p384", "ecdsa"]
 p521 = ["dep:p521", "ecdsa"]
-ppk = ["dep:hex", "alloc", "cipher/aes-cbc", "dep:hmac", "dep:argon2", "dep:sha1"]
+ppk = ["dep:hex", "alloc", "cipher/aes-cbc", "dep:hmac", "dep:argon2", "dep:sha1", "dep:sha1_next"]
 rsa = ["dep:bigint", "dep:rsa", "alloc", "rand_core"]
-rsa-sha1 = ["rsa", "dep:sha1", "sha1/oid"]
+rsa-sha1 = ["rsa", "dep:sha1", "dep:sha1_next", "sha1/oid"]
 tdes = ["cipher/tdes", "encryption"]
 
 [package.metadata.docs.rs]
