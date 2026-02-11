@@ -8,9 +8,6 @@ use encoding::{Decode, Encode, Reader, Writer};
 #[cfg(feature = "std")]
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// Maximum allowed value for a Unix timestamp.
-pub const MAX_SECS: u64 = i64::MAX as u64;
-
 /// Unix timestamps as used in OpenSSH certificates.
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub(super) struct UnixTime {
@@ -25,32 +22,21 @@ pub(super) struct UnixTime {
 impl UnixTime {
     /// Create a new Unix timestamp.
     ///
-    /// `secs` is the number of seconds since the Unix epoch and must be less
-    /// than or equal to `i64::MAX`.
+    /// `secs` is the number of seconds since the Unix epoch.
     #[cfg(not(feature = "std"))]
     pub fn new(secs: u64) -> Result<Self> {
-        if secs <= MAX_SECS {
-            Ok(Self { secs })
-        } else {
-            Err(Error::Time)
-        }
+        Ok(Self { secs })
     }
 
     /// Create a new Unix timestamp.
     ///
-    /// This version requires `std` and ensures there's a valid `SystemTime`
-    /// representation with an infallible conversion (which also improves the
-    /// `Debug` output)
+    /// This version requires `std` and caches a `SystemTime` representation.
+    /// If the value is not representable, it is saturated to the maximum
+    /// representable `SystemTime`.
     #[cfg(feature = "std")]
     pub fn new(secs: u64) -> Result<Self> {
-        if secs > MAX_SECS {
-            return Err(Error::Time);
-        }
-
-        match UNIX_EPOCH.checked_add(Duration::from_secs(secs)) {
-            Some(time) => Ok(Self { secs, time }),
-            None => Err(Error::Time),
-        }
+        let time = system_time_from_secs(secs);
+        Ok(Self { secs, time })
     }
 
     /// Get the current time as a Unix timestamp.
@@ -58,6 +44,18 @@ impl UnixTime {
     pub fn now() -> Result<Self> {
         SystemTime::now().try_into()
     }
+
+}
+
+#[cfg(feature = "std")]
+fn system_time_from_secs(secs: u64) -> SystemTime {
+    UNIX_EPOCH
+        .checked_add(Duration::from_secs(secs))
+        .unwrap_or_else(|| {
+            UNIX_EPOCH
+                .checked_add(Duration::from_secs(i64::MAX as u64))
+                .expect("i64::MAX secs must be representable")
+        })
 }
 
 impl Decode for UnixTime {
@@ -117,16 +115,10 @@ impl fmt::Debug for UnixTime {
 
 #[cfg(test)]
 mod tests {
-    use super::{UnixTime, MAX_SECS};
-    use crate::Error;
+    use super::{UnixTime};
 
     #[test]
     fn new_with_max_secs() {
-        assert!(UnixTime::new(MAX_SECS).is_ok());
-    }
-
-    #[test]
-    fn new_over_max_secs_returns_error() {
-        assert_eq!(UnixTime::new(MAX_SECS + 1), Err(Error::Time));
+        assert!(UnixTime::new(u64::MAX).is_ok());
     }
 }
