@@ -463,7 +463,20 @@ impl Decode for Certificate {
             key_id: String::decode(reader)?,
             valid_principals: Vec::decode(reader)?,
             valid_after: UnixTime::decode(reader)?,
-            valid_before: UnixTime::decode(reader)?,
+            valid_before: {
+                // For OpenSSH certs, the "valid before" field can be set to `u64::MAX` to indicate that the certificate never expires (i.e. "forever").
+                let timestamp = u64::decode(reader)?;
+                match UnixTime::try_from(timestamp) {
+                    Ok(ut) => ut,
+                    Err(_) => {
+                        if timestamp == u64::MAX {
+                            UnixTime::forever()?
+                        } else {
+                            return Err(Error::Time);
+                        }
+                    }
+                }
+            },
             critical_options: OptionsMap::decode(reader)?,
             extensions: OptionsMap::decode(reader)?,
             reserved: Vec::decode(reader)?,

@@ -53,6 +53,20 @@ impl UnixTime {
         }
     }
 
+    #[cfg(not(feature = "std"))]
+    pub fn forever() -> Result<Self> {
+        Ok(Self { secs: u64::MAX })
+    }
+
+    #[cfg(feature = "std")]
+    pub fn forever() -> Result<Self> {
+        let secs = u64::MAX;
+        match UNIX_EPOCH.checked_add(Duration::from_secs(i64::MAX as u64)) {
+            Some(time) => Ok(Self { secs, time }),
+            None => Err(Error::Time),
+        }
+    }
+
     /// Get the current time as a Unix timestamp.
     #[cfg(feature = "std")]
     pub fn now() -> Result<Self> {
