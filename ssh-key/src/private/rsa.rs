@@ -87,25 +87,30 @@ impl Drop for RsaPrivateKey {
     }
 }
 
-// Adapter between RngCore trait versions between rand_core and rsa::rand_core
+// Adapter between rand_core (used by this crate) and rsa::rand_core.
+// rand_core 0.10.0 replaced RngCore with TryRng/Rng hierarchy.
+// Rng, CryptoRng, and RngCore are blanket-implemented for TryRng<Error=Infallible>.
 #[cfg(feature = "rsa")]
 struct RngAdapter<R: CryptoRngCore>(R);
 #[cfg(feature = "rsa")]
-impl<R: CryptoRngCore> rsa::rand_core::RngCore for RngAdapter<R> {
-    fn next_u32(&mut self) -> u32 {
-        self.0.next_u32()
+impl<R: CryptoRngCore> rsa::rand_core::TryRng for RngAdapter<R> {
+    type Error = core::convert::Infallible;
+
+    fn try_next_u32(&mut self) -> core::result::Result<u32, Self::Error> {
+        Ok(self.0.next_u32())
     }
 
-    fn next_u64(&mut self) -> u64 {
-        self.0.next_u64()
+    fn try_next_u64(&mut self) -> core::result::Result<u64, Self::Error> {
+        Ok(self.0.next_u64())
     }
 
-    fn fill_bytes(&mut self, dst: &mut [u8]) {
-        self.0.fill_bytes(dst)
+    fn try_fill_bytes(&mut self, dst: &mut [u8]) -> core::result::Result<(), Self::Error> {
+        self.0.fill_bytes(dst);
+        Ok(())
     }
 }
 #[cfg(feature = "rsa")]
-impl<R: CryptoRngCore> rsa::rand_core::CryptoRng for RngAdapter<R> {}
+impl<R: CryptoRngCore> rsa::rand_core::TryCryptoRng for RngAdapter<R> {}
 
 /// RSA private/public keypair.
 #[derive(Clone)]
