@@ -5,7 +5,7 @@ use crate::{public, Result, Signature, SigningKey};
 use alloc::{string::String, vec::Vec};
 
 #[cfg(feature = "rand_core")]
-use rand_core::CryptoRngCore;
+use rand_core::Rng;
 
 #[cfg(feature = "std")]
 use std::time::SystemTime;
@@ -152,7 +152,7 @@ impl Builder {
     /// provided random number generator.
     #[cfg(feature = "rand_core")]
     pub fn new_with_random_nonce(
-        rng: &mut impl CryptoRngCore,
+        rng: &mut impl Rng,
         public_key: impl Into<public::KeyData>,
         valid_after: u64,
         valid_before: u64,

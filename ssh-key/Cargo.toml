@@ -1,6 +1,6 @@
 [package]
 name = "internal-russh-forked-ssh-key"
-version = "0.6.16+upstream-0.6.7"
+version = "0.6.17+upstream-0.6.7"
 description = """
 Pure Rust implementation of SSH key file format decoders/encoders as described
 in RFC4251/RFC4253 and OpenSSH key formats, as well as "sshsig" signatures and
@@ -37,8 +37,8 @@ hmac = { version = "0.12", optional = true }
 p256 = { version = "0.13", optional = true, default-features = false, features = ["ecdsa"] }
 p384 = { version = "0.13", optional = true, default-features = false, features = ["ecdsa"] }
 p521 = { version = "0.13.3", optional = true, default-features = false, features = ["ecdsa", "getrandom"] } # TODO(tarcieri): RFC6979
-rand_core = { version = "0.6.4", optional = true, default-features = false }
-rsa = { version = "0.10.0-rc.10", optional = true, default-features = false, features = ["sha2"] }
+rand_core = { version = "0.10.0", optional = true, default-features = false }
+rsa = { version = "0.10.0-rc.16", optional = true, default-features = false, features = ["sha2"] }
 sec1 = { version = "0.7.3", optional = true, default-features = false, features = ["point"] }
 serde = { version = "1.0.16", optional = true }
 sha1 = { version = "0.10", optional = true, default-features = false, features = ["oid"] }
@@ -80,7 +80,7 @@ encryption = [
     "cipher/chacha20poly1305",
     "rand_core"
 ]
-getrandom = ["rand_core/getrandom"]
+getrandom = []
 hazmat-allow-insecure-rsa-keys = []
 p256 = ["dep:p256", "ecdsa"]
 p384 = ["dep:p384", "ecdsa"]
