@@ -106,7 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `p256` v0.13
   - `p384` v0.13
   - `sec1` v0.7
-- Use `&mut impl CryptoRngCore` for RNGs ([#67])
+- Use `&mut impl Rng` for RNGs ([#67])
 - Make `certificate::Builder::new` fallible ([#71])
 - Rename `MPInt` => `Mpint` ([#76])
 - Split `AlgorithmUnknown` and `AlgorithmUnsupported` ([#81])

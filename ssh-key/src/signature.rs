@@ -3,7 +3,11 @@
 use crate::{private, public, Algorithm, EcdsaCurve, Error, Mpint, PrivateKey, PublicKey, Result};
 use alloc::vec::Vec;
 use core::fmt;
+#[cfg(feature = "dsa")]
+use dsa::BoxedUint;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
+#[cfg(feature = "dsa")]
+use sha1::Digest;
 use signature::{SignatureEncoding, Signer, Verifier};
 
 #[cfg(feature = "ed25519")]
@@ -12,7 +16,6 @@ use crate::{private::Ed25519Keypair, public::Ed25519PublicKey};
 #[cfg(feature = "dsa")]
 use {
     crate::{private::DsaKeypair, public::DsaPublicKey},
-    bigint::BigUint,
     signature::{DigestSigner, DigestVerifier},
 };
 
@@ -26,10 +29,7 @@ use crate::{
 use core::iter;
 
 #[cfg(feature = "rsa")]
-use {
-    crate::{private::RsaKeypair, public::RsaPublicKey, HashAlg},
-    sha2::Sha512,
-};
+use crate::{private::RsaKeypair, public::RsaPublicKey, HashAlg};
 
 #[cfg(any(feature = "rsa-sha1", feature = "dsa"))]
 use sha1::Sha1;
@@ -37,8 +37,8 @@ use sha1::Sha1;
 #[cfg(any(feature = "ed25519", feature = "rsa", feature = "p256"))]
 use sha2::Sha256;
 
-#[cfg(any(feature = "dsa", feature = "ed25519", feature = "p256"))]
-use sha2::Digest;
+#[cfg(any(feature = "rsa"))]
+use sha2::Sha512;
 
 const DSA_SIGNATURE_SIZE: usize = 40;
 const ED25519_SIGNATURE_SIZE: usize = 64;
@@ -329,17 +329,17 @@ impl Verifier<Signature> for public::KeyData {
 impl Signer<Signature> for DsaKeypair {
     fn try_sign(&self, message: &[u8]) -> signature::Result<Signature> {
         let signature = dsa::SigningKey::try_from(self)?
-            .try_sign_digest(Sha1::new_with_prefix(message))
+            .try_sign_digest(|d: &mut Sha1| Ok(d.update(message)))
             .map_err(|_| signature::Error::new())?;
 
         // Encode the format specified in RFC4253 section 6.6: two raw 80-bit integers concatenated
         let mut data = Vec::new();
 
         for component in [signature.r(), signature.s()] {
-            let mut bytes = component.to_bytes_be();
+            let mut bytes = component.to_be_bytes();
             let pad_len = (DSA_SIGNATURE_SIZE / 2).saturating_sub(bytes.len());
             data.extend(iter::repeat(0).take(pad_len));
-            data.append(&mut bytes);
+            data.extend(&bytes);
         }
 
         debug_assert_eq!(data.len(), DSA_SIGNATURE_SIZE);
@@ -362,11 +362,12 @@ impl Verifier<Signature> for DsaPublicKey {
                 }
                 let (r, s) = data.split_at(DSA_SIGNATURE_SIZE / 2);
                 let signature = dsa::Signature::from_components(
-                    BigUint::from_bytes_be(r),
-                    BigUint::from_bytes_be(s),
-                )?;
+                    BoxedUint::from_be_slice_vartime(r),
+                    BoxedUint::from_be_slice_vartime(s),
+                )
+                .ok_or_else(signature::Error::new)?;
                 dsa::VerifyingKey::try_from(self)?
-                    .verify_digest(Sha1::new_with_prefix(message), &signature)
+                    .verify_digest(|d: &mut Sha1| Ok(d.update(message)), &signature)
                     .map_err(|_| signature::Error::new())
             }
             _ => Err(signature.algorithm().unsupported_error().into()),
@@ -434,7 +435,7 @@ impl Verifier<Signature> for public::SkEcdsaSha2NistP256 {
     fn verify(&self, message: &[u8], signature: &Signature) -> signature::Result<()> {
         let (signature_bytes, flags_and_counter) = split_sk_signature(signature)?;
         let signature = p256_signature_from_openssh_bytes(signature_bytes)?;
-        p256::ecdsa::VerifyingKey::from_encoded_point(self.ec_point())?.verify(
+        p256::ecdsa::VerifyingKey::from_sec1_point(self.ec_point())?.verify(
             &make_sk_signed_data(self.application(), flags_and_counter, message),
             &signature,
         )
@@ -443,6 +444,8 @@ impl Verifier<Signature> for public::SkEcdsaSha2NistP256 {
 
 #[cfg(any(feature = "p256", feature = "ed25519"))]
 fn make_sk_signed_data(application: &str, flags_and_counter: &[u8], message: &[u8]) -> Vec<u8> {
+    use sha2::Digest;
+
     const SHA256_OUTPUT_LENGTH: usize = 32;
     const SIGNED_SK_DATA_LENGTH: usize = 2 * SHA256_OUTPUT_LENGTH + SK_SIGNATURE_TRAILER_SIZE;
 
@@ -665,24 +668,24 @@ impl Verifier<Signature> for EcdsaPublicKey {
 }
 
 /// Maps between versions of signature crate
-fn remap_sig_result<T>(r: signature_next::Result<T>) -> signature::Result<T> {
+fn remap_sig_result<T>(r: signature::Result<T>) -> signature::Result<T> {
     r.map_err(|_| signature::Error::new())
 }
 
 #[cfg(feature = "rsa")]
 impl Signer<Signature> for (&RsaKeypair, Option<HashAlg>) {
     fn try_sign(&self, message: &[u8]) -> signature::Result<Signature> {
-        use rsa::signature::{SignatureEncoding, Signer};
+        use rsa::signature::SignatureEncoding;
         let data = match self.1 {
             Some(HashAlg::Sha512) => remap_sig_result(
-                rsa::pkcs1v15::SigningKey::<rsa::sha2::Sha512>::try_from(self.0)?.try_sign(message),
+                rsa::pkcs1v15::SigningKey::<Sha512>::try_from(self.0)?.try_sign(message),
             ),
             Some(HashAlg::Sha256) => remap_sig_result(
-                rsa::pkcs1v15::SigningKey::<rsa::sha2::Sha256>::try_from(self.0)?.try_sign(message),
+                rsa::pkcs1v15::SigningKey::<Sha256>::try_from(self.0)?.try_sign(message),
             ),
             #[cfg(feature = "rsa-sha1")]
             None => remap_sig_result(
-                rsa::pkcs1v15::SigningKey::<sha1_next::Sha1>::try_from(self.0)?.try_sign(message),
+                rsa::pkcs1v15::SigningKey::<Sha1>::try_from(self.0)?.try_sign(message),
             ),
             #[cfg(not(feature = "rsa-sha1"))]
             None => return Err(Algorithm::Rsa { hash: None }.unsupported_error().into()),
@@ -706,7 +709,7 @@ impl Signer<Signature> for RsaKeypair {
 #[cfg(feature = "rsa")]
 impl Verifier<Signature> for RsaPublicKey {
     fn verify(&self, message: &[u8], signature: &Signature) -> signature::Result<()> {
-        use signature_next::Verifier;
+        use signature::Verifier;
         match signature.algorithm {
             Algorithm::Rsa { hash } => {
                 let signature =
@@ -717,7 +720,7 @@ impl Verifier<Signature> for RsaPublicKey {
                     None => Err(Algorithm::Rsa { hash: None }.unsupported_error().into()),
                     #[cfg(feature = "rsa-sha1")]
                     None => remap_sig_result(
-                        rsa::pkcs1v15::VerifyingKey::<sha1_next::Sha1>::try_from(self)?
+                        rsa::pkcs1v15::VerifyingKey::<sha1::Sha1>::try_from(self)?
                             .verify(message, &signature),
                     )
                     .map_err(|_| signature::Error::new()),
@@ -895,10 +898,10 @@ mod tests {
 
             let signature = dsa::SigningKey::try_from(keypair)
                 .expect("valid DSA signing key")
-                .try_sign_digest(Sha1::new_with_prefix(data))
+                .try_sign_digest(|d: &mut Sha1| Ok(d.update(data)))
                 .expect("valid DSA signature");
 
-            let r = signature.r().to_bytes_be();
+            let r = signature.r().to_be_bytes();
             assert_eq!(
                 r.len(),
                 r_len,
@@ -906,7 +909,7 @@ mod tests {
                 r.len(),
                 r_len
             );
-            let s = signature.s().to_bytes_be();
+            let s = signature.s().to_be_bytes();
             assert_eq!(
                 s.len(),
                 s_len,

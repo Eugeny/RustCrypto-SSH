@@ -9,7 +9,7 @@ use core::fmt::{Debug, Display};
 use core::num::ParseIntError;
 use core::str::FromStr;
 use hex::FromHex;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha1::{Digest, Sha1};
 use sha2::Sha256;
 

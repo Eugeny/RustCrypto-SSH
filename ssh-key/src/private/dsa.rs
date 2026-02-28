@@ -2,12 +2,14 @@
 
 use crate::{public::DsaPublicKey, Error, Mpint, Result};
 use core::fmt;
+#[cfg(feature = "dsa")]
+use crypto_bigint::BoxedUint;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
 #[cfg(all(feature = "dsa", feature = "rand_core"))]
-use rand_core::CryptoRngCore;
+use rand_core::CryptoRng;
 
 /// Digital Signature Algorithm (DSA) private key.
 ///
@@ -86,20 +88,20 @@ impl Drop for DsaPrivateKey {
 }
 
 #[cfg(feature = "dsa")]
-impl TryFrom<DsaPrivateKey> for dsa::BigUint {
+impl TryFrom<DsaPrivateKey> for BoxedUint {
     type Error = Error;
 
-    fn try_from(key: DsaPrivateKey) -> Result<dsa::BigUint> {
-        dsa::BigUint::try_from(&key.inner)
+    fn try_from(key: DsaPrivateKey) -> Result<BoxedUint> {
+        BoxedUint::try_from(&key.inner)
     }
 }
 
 #[cfg(feature = "dsa")]
-impl TryFrom<&DsaPrivateKey> for dsa::BigUint {
+impl TryFrom<&DsaPrivateKey> for BoxedUint {
     type Error = Error;
 
-    fn try_from(key: &DsaPrivateKey) -> Result<dsa::BigUint> {
-        dsa::BigUint::try_from(&key.inner)
+    fn try_from(key: &DsaPrivateKey) -> Result<BoxedUint> {
+        BoxedUint::try_from(&key.inner)
     }
 }
 
@@ -118,7 +120,7 @@ impl TryFrom<&dsa::SigningKey> for DsaPrivateKey {
 
     fn try_from(key: &dsa::SigningKey) -> Result<DsaPrivateKey> {
         Ok(DsaPrivateKey {
-            inner: key.x().try_into()?,
+            inner: key.x().as_ref().try_into()?,
         })
     }
 }
@@ -141,7 +143,7 @@ impl DsaKeypair {
 
     /// Generate a random DSA private key.
     #[cfg(all(feature = "dsa", feature = "rand_core"))]
-    pub fn random(rng: &mut impl CryptoRngCore) -> Result<Self> {
+    pub fn random(rng: &mut impl CryptoRng) -> Result<Self> {
         let components = dsa::Components::generate(rng, Self::KEY_SIZE);
         dsa::SigningKey::generate(rng, components).try_into()
     }
@@ -218,7 +220,7 @@ impl TryFrom<&DsaKeypair> for dsa::SigningKey {
     fn try_from(key: &DsaKeypair) -> Result<dsa::SigningKey> {
         Ok(dsa::SigningKey::from_components(
             dsa::VerifyingKey::try_from(&key.public)?,
-            dsa::BigUint::try_from(&key.private)?,
+            BoxedUint::try_from(&key.private)?,
         )?)
     }
 }

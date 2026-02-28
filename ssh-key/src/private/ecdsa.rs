@@ -8,7 +8,7 @@ use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
 #[cfg(feature = "rand_core")]
-use rand_core::Rng;
+use rand_core::CryptoRng;
 
 /// Elliptic Curve Digital Signature Algorithm (ECDSA) private key.
 #[derive(Clone)]
@@ -197,11 +197,13 @@ impl EcdsaKeypair {
     /// Generate a random ECDSA private key.
     #[cfg(feature = "rand_core")]
     #[allow(unused_variables)]
-    pub fn random(rng: &mut impl Rng, curve: EcdsaCurve) -> Result<Self> {
+    pub fn random(rng: &mut impl CryptoRng, curve: EcdsaCurve) -> Result<Self> {
         match curve {
             #[cfg(feature = "p256")]
             EcdsaCurve::NistP256 => {
-                let private = p256::SecretKey::random(rng);
+                use p256::elliptic_curve::Generate;
+
+                let private = p256::SecretKey::generate_from_rng(rng);
                 let public = private.public_key();
                 Ok(EcdsaKeypair::NistP256 {
                     private: private.into(),
@@ -210,7 +212,9 @@ impl EcdsaKeypair {
             }
             #[cfg(feature = "p384")]
             EcdsaCurve::NistP384 => {
-                let private = p384::SecretKey::random(rng);
+                use p256::elliptic_curve::Generate;
+
+                let private = p384::SecretKey::generate_from_rng(rng);
                 let public = private.public_key();
                 Ok(EcdsaKeypair::NistP384 {
                     private: private.into(),
@@ -219,7 +223,9 @@ impl EcdsaKeypair {
             }
             #[cfg(feature = "p521")]
             EcdsaCurve::NistP521 => {
-                let private = p521::SecretKey::random(rng);
+                use p256::elliptic_curve::Generate;
+
+                let private = p521::SecretKey::generate_from_rng(rng);
                 let public = private.public_key();
                 Ok(EcdsaKeypair::NistP521 {
                     private: private.into(),

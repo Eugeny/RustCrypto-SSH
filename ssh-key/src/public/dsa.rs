@@ -2,6 +2,8 @@
 
 use crate::{Error, Mpint, Result};
 use core::hash::{Hash, Hasher};
+#[cfg(feature = "dsa")]
+use crypto_bigint::BoxedUint;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 
 /// Digital Signature Algorithm (DSA) public key.
@@ -79,12 +81,12 @@ impl TryFrom<&DsaPublicKey> for dsa::VerifyingKey {
 
     fn try_from(key: &DsaPublicKey) -> Result<dsa::VerifyingKey> {
         let components = dsa::Components::from_components(
-            dsa::BigUint::try_from(&key.p)?,
-            dsa::BigUint::try_from(&key.q)?,
-            dsa::BigUint::try_from(&key.g)?,
+            BoxedUint::try_from(&key.p)?,
+            BoxedUint::try_from(&key.q)?,
+            BoxedUint::try_from(&key.g)?,
         )?;
 
-        dsa::VerifyingKey::from_components(components, dsa::BigUint::try_from(&key.y)?)
+        dsa::VerifyingKey::from_components(components, BoxedUint::try_from(&key.y)?)
             .map_err(|_| Error::Crypto)
     }
 }
@@ -104,10 +106,10 @@ impl TryFrom<&dsa::VerifyingKey> for DsaPublicKey {
 
     fn try_from(key: &dsa::VerifyingKey) -> Result<DsaPublicKey> {
         Ok(DsaPublicKey {
-            p: key.components().p().try_into()?,
-            q: key.components().q().try_into()?,
-            g: key.components().g().try_into()?,
-            y: key.y().try_into()?,
+            p: key.components().p().as_ref().try_into()?,
+            q: key.components().q().as_ref().try_into()?,
+            g: key.components().g().as_ref().try_into()?,
+            y: key.y().as_ref().try_into()?,
         })
     }
 }

@@ -3,9 +3,9 @@
 use crate::{Error, Result};
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
+#[cfg(any(feature = "dsa", feature = "rsa"))]
+use crypto_bigint::BoxedUint;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
-#[cfg(feature = "rsa")]
-use rsa::BoxedUint;
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 

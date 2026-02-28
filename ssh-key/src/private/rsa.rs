@@ -8,7 +8,7 @@ use zeroize::Zeroize;
 
 #[cfg(feature = "rsa")]
 use {
-    rand_core::CryptoRngCore,
+    rand_core::CryptoRng,
     rsa::sha2::digest::const_oid::AssociatedOid,
     rsa::{pkcs1v15, traits::PrivateKeyParts},
 };
@@ -87,26 +87,6 @@ impl Drop for RsaPrivateKey {
     }
 }
 
-// Adapter between RngCore trait versions between rand_core and rsa::rand_core
-#[cfg(feature = "rsa")]
-struct RngAdapter<R: CryptoRngCore>(R);
-#[cfg(feature = "rsa")]
-impl<R: CryptoRngCore> rsa::rand_core::RngCore for RngAdapter<R> {
-    fn next_u32(&mut self) -> u32 {
-        self.0.next_u32()
-    }
-
-    fn next_u64(&mut self) -> u64 {
-        self.0.next_u64()
-    }
-
-    fn fill_bytes(&mut self, dst: &mut [u8]) {
-        self.0.fill_bytes(dst)
-    }
-}
-#[cfg(feature = "rsa")]
-impl<R: CryptoRngCore> rsa::rand_core::CryptoRng for RngAdapter<R> {}
-
 /// RSA private/public keypair.
 #[derive(Clone)]
 pub struct RsaKeypair {
@@ -124,13 +104,12 @@ impl RsaKeypair {
 
     /// Generate a random RSA keypair of the given size.
     #[cfg(feature = "rsa")]
-    pub fn random(rng: &mut impl CryptoRngCore, bit_size: usize) -> Result<Self> {
+    pub fn random(rng: &mut impl CryptoRng, bit_size: usize) -> Result<Self> {
         #[cfg(not(feature = "hazmat-allow-insecure-rsa-keys"))]
         if bit_size < Self::MIN_KEY_SIZE {
             return Err(Error::Crypto);
         }
-        let mut rng = RngAdapter(rng);
-        rsa::RsaPrivateKey::new(&mut rng, bit_size)?.try_into()
+        rsa::RsaPrivateKey::new(rng, bit_size)?.try_into()
     }
 }
 
@@ -224,8 +203,12 @@ impl TryFrom<&RsaKeypair> for rsa::RsaPrivateKey {
         )?;
 
         #[cfg(not(feature = "hazmat-allow-insecure-rsa-keys"))]
-        if ret.size().saturating_mul(8) < RsaKeypair::MIN_KEY_SIZE {
-            return Err(Error::Crypto);
+        {
+            use rsa::traits::PublicKeyParts;
+
+            if ret.size().saturating_mul(8) < RsaKeypair::MIN_KEY_SIZE {
+                return Err(Error::Crypto);
+            }
         }
 
         Ok(ret)
@@ -271,7 +254,7 @@ impl TryFrom<&rsa::RsaPrivateKey> for RsaKeypair {
 #[cfg(feature = "rsa")]
 impl<D> TryFrom<&RsaKeypair> for pkcs1v15::SigningKey<D>
 where
-    D: digest_next::Digest + AssociatedOid,
+    D: signature::digest::Digest + AssociatedOid,
 {
     type Error = Error;
 

@@ -155,7 +155,7 @@ use {
 };
 
 #[cfg(feature = "rand_core")]
-use rand_core::Rng;
+use rand_core::CryptoRng;
 
 #[cfg(feature = "std")]
 use std::{fs, path::Path};
@@ -396,7 +396,7 @@ impl PrivateKey {
     #[cfg(feature = "encryption")]
     pub fn encrypt(
         &self,
-        rng: &mut impl Rng,
+        rng: &mut impl CryptoRng,
         password: impl AsRef<[u8]>,
     ) -> Result<Self> {
         self.encrypt_with_cipher(rng, Cipher::Aes256Ctr, password)
@@ -409,7 +409,7 @@ impl PrivateKey {
     #[cfg(feature = "encryption")]
     pub fn encrypt_with_cipher(
         &self,
-        rng: &mut impl Rng,
+        rng: &mut impl CryptoRng,
         cipher: Cipher,
         password: impl AsRef<[u8]>,
     ) -> Result<Self> {
@@ -509,7 +509,7 @@ impl PrivateKey {
     /// - `Error::AlgorithmUnknown` if the algorithm is unsupported.
     #[cfg(feature = "rand_core")]
     #[allow(unreachable_code, unused_variables)]
-    pub fn random(rng: &mut impl Rng, algorithm: Algorithm) -> Result<Self> {
+    pub fn random(rng: &mut impl CryptoRng, algorithm: Algorithm) -> Result<Self> {
         let checkint = rng.next_u32();
         let key_data = match algorithm {
             #[cfg(feature = "dsa")]

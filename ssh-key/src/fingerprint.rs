@@ -3,7 +3,8 @@
 mod randomart;
 
 use self::randomart::Randomart;
-use crate::{public, Error, HashAlg, Result};
+use crate::public::KeyData;
+use crate::{Error, HashAlg, Result};
 use core::{
     fmt::{self, Display},
     str::{self, FromStr},
@@ -22,6 +23,22 @@ use alloc::string::{String, ToString};
 
 #[cfg(all(feature = "alloc", feature = "serde"))]
 use serde::{de, ser, Deserialize, Serialize};
+
+struct WrappedSha256<'a>(&'a mut Sha256);
+impl encoding::Writer for WrappedSha256<'_> {
+    fn write(&mut self, bytes: &[u8]) -> encoding::Result<()> {
+        self.0.update(bytes);
+        Ok(())
+    }
+}
+
+struct WrappedSha512<'a>(&'a mut Sha512);
+impl encoding::Writer for WrappedSha512<'_> {
+    fn write(&mut self, bytes: &[u8]) -> encoding::Result<()> {
+        self.0.update(bytes);
+        Ok(())
+    }
+}
 
 /// SSH public key fingerprints.
 ///
@@ -59,16 +76,20 @@ impl Fingerprint {
 
     /// Create a fingerprint of the given public key data using the provided
     /// hash algorithm.
-    pub fn new(algorithm: HashAlg, public_key: &public::KeyData) -> Self {
+    pub fn new(algorithm: HashAlg, public_key: &KeyData) -> Self {
         match algorithm {
             HashAlg::Sha256 => {
                 let mut digest = Sha256::new();
-                public_key.encode(&mut digest).expect(FINGERPRINT_ERR_MSG);
+                public_key
+                    .encode(&mut WrappedSha256(&mut digest))
+                    .expect(FINGERPRINT_ERR_MSG);
                 Self::Sha256(digest.finalize().into())
             }
             HashAlg::Sha512 => {
                 let mut digest = Sha512::new();
-                public_key.encode(&mut digest).expect(FINGERPRINT_ERR_MSG);
+                public_key
+                    .encode(&mut WrappedSha512(&mut digest))
+                    .expect(FINGERPRINT_ERR_MSG);
                 Self::Sha512(digest.finalize().into())
             }
         }
