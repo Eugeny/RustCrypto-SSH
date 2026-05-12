@@ -356,9 +356,9 @@ dependencies = [
 
 [[package]]
 name = "dsa"
-version = "0.7.0-rc.13"
+version = "0.7.0-rc.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cc15b5f6b4f28237e692ecf3823bec0aa55aa528a0993a366831dcdcbfeb54c"
+checksum = "205b3f37ceb87c2ed5c72dac75f286848c68b19ba3246e9196f3666ce048a14b"
 dependencies = [
  "crypto-bigint",
  "crypto-primes",
